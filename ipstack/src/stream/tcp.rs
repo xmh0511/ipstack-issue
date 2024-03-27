@@ -85,6 +85,7 @@ impl IpStackTcpStream {
             shutdown: Shutdown::default(),
             write_notify: None,
         };
+		println!("tcp.inner() = {:?}",tcp.inner());
         if !tcp.inner().syn {
             _ = pkt_sender.send(stream.create_rev_packet(RST | ACK, TTL, None, Vec::new())?);
             Err(IpStackError::InvalidTcpPacket)

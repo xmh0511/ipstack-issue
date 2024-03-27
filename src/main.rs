@@ -78,6 +78,8 @@ where
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+	env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("trace")).init();
+
     let (tx, rx) = channel();
     let _ = ctrlc2::set_handler(move || {
         tx.send(()).expect("Could not send signal on channel.");
