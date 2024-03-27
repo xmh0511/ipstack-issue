@@ -7,7 +7,7 @@ use tun2::{self, Configuration};
 //use tproxy_config;
 use std::sync::mpsc::channel;
 
-async fn my_bidirection_copy<L, R>(lhs: L, rhs: R,addr:String)
+async fn my_bidirection_copy<L, R>(lhs: L, rhs: R, addr: String)
 where
     L: AsyncRead + AsyncWrite + Send + Sync + 'static,
     R: AsyncRead + AsyncWrite + Send + Sync + 'static,
@@ -19,11 +19,17 @@ where
     join_set.spawn(async move {
         let mut buf = [0u8; 1500];
         loop {
-            let size = match tokio::time::timeout(std::time::Duration::from_secs(3), l_reader.read(&mut buf)).await{
-                Ok(v)=>v?,
-                Err(_e)=>{
-                   // r_writer.shutdown().await.unwrap();
-                   // println!("left close ok for {addr1}");
+            let size = match tokio::time::timeout(
+                std::time::Duration::from_secs(3),
+                l_reader.read(&mut buf),
+            )
+            .await
+            {
+                Ok(v) => v?,
+                Err(_e) => {
+                    println!("read from ipstack timeout {_e:?}");
+                    // r_writer.shutdown().await.unwrap();
+                    // println!("left close ok for {addr1}");
                     return anyhow::Ok(());
                 }
             };
@@ -41,14 +47,18 @@ where
     join_set.spawn(async move {
         let mut buf = [0u8; 1500];
         loop {
-            let size = match tokio::time::timeout(std::time::Duration::from_secs(3), r_reader.read(&mut buf)).await{
-                Ok(v) => {
-                    v?
-                },
-                Err(_e) =>{
+            let size = match tokio::time::timeout(
+                std::time::Duration::from_secs(3),
+                r_reader.read(&mut buf),
+            )
+            .await
+            {
+                Ok(v) => v?,
+                Err(_e) => {
+                    println!("read from server timeout {_e:?}");
                     //l_writer.shutdown().await.unwrap();
                     return anyhow::Ok(());
-                },
+                }
             };
             if size == 0 {
                 //println!("right read 0 {addr2}");
@@ -60,12 +70,11 @@ where
             l_writer.write_all(&buf[..size]).await?;
         }
     });
-    while let Some(_) = join_set.join_next().await{
+    while let Some(_) = join_set.join_next().await {
         //break;
     }
     println!("====== end tcp connection ====== {addr}");
 }
-
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -97,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
                     println!("IpStackStream::Tcp(tcp) {} -> {}", tcp.local_addr(), tcp.peer_addr());
                     let addr = tcp.peer_addr().ip().to_string();
 
-                    let s = match tokio::net::TcpStream::connect(SocketAddr::V4("43.248.116.55:10242".parse().unwrap())).await {
+                    let s = match tokio::net::TcpStream::connect(SocketAddr::V4("101.35.230.139:8080".parse().unwrap())).await {
                         Ok(s) => s,
                         Err(e) => {
                             println!("connect TCP server failed \"{}\"", e);
@@ -123,3 +132,5 @@ async fn main() -> anyhow::Result<()> {
     println!("terminate the program");
     Ok(())
 }
+
+
